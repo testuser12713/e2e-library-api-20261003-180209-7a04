@@ -20,18 +20,30 @@ python -m pip install -e ".[dev]"
 
 ## Start (Entwicklung)
 
+`LIBRARY_API_KEY` ist **erforderlich** und hat keinen festen Default — setzen Sie ihn, bevor Sie starten:
+
+```bash
+# Linux/macOS
+export LIBRARY_API_KEY=<ein-beliebiger-Key>
+
+# Windows (PowerShell)
+$env:LIBRARY_API_KEY = "<ein-beliebiger-Key>"
+```
+
+Danach:
+
 ```bash
 uvicorn app.main:app --port 8000
 ```
 
-Die Anwendung legt beim Start automatisch die Tabellen in der SQLite-Datenbank an (`sqlite:///./library.db`).
+Die `RUN.json` erzeugt den Key bei Tessa/CI automatisch pro Lauf. Die Anwendung legt beim Start automatisch die Tabellen in der SQLite-Datenbank an (`sqlite:///./library.db`). Fehlt `LIBRARY_API_KEY`, verweigert die Anwendung den Start mit einer klaren Fehlermeldung.
 
 ## Konfiguration
 
-| Variable          | Zweck                        | Dev-Default   |
-| ----------------- | ---------------------------- | ------------- |
-| `LIBRARY_API_KEY` | API-Key für schreibende Endpunkte | `dev-key` |
-| `DATABASE_URL`    | SQLAlchemy-Datenbank-URL     | `sqlite:///./library.db` |
+| Variable          | Zweck                          | Default                        |
+| ----------------- | ------------------------------ | ------------------------------ |
+| `LIBRARY_API_KEY` | API-Key für schreibende Endpunkte | **erforderlich**, kein Default |
+| `DATABASE_URL`    | SQLAlchemy-Datenbank-URL       | `sqlite:///./library.db`       |
 
 Schreibende Endpunkte (`POST`/`PUT`/`PATCH`/`DELETE`) verlangen den Header `X-API-Key` mit dem Wert aus `LIBRARY_API_KEY`. Lesende Endpunkte bleiben ohne Key erreichbar.
 

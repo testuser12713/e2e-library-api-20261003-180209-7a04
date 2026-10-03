@@ -4,7 +4,6 @@ import json
 import pytest
 from fastapi import HTTPException
 
-from app.config import settings
 from app.dependencies import require_api_key
 from app.errors import error_response
 
@@ -22,7 +21,7 @@ def test_error_response_shape():
     assert body == {"detail": {"code": "validation", "message": "Request validation failed"}}
 
 
-def test_require_api_key_rejects_missing():
+def test_require_api_key_rejects_missing(api_key):
     with pytest.raises(HTTPException) as exc_info:
         asyncio.run(require_api_key(None))
     assert exc_info.value.status_code == 401
@@ -32,7 +31,7 @@ def test_require_api_key_rejects_missing():
     }
 
 
-def test_require_api_key_rejects_wrong():
+def test_require_api_key_rejects_wrong(api_key):
     with pytest.raises(HTTPException) as exc_info:
         asyncio.run(require_api_key("not-the-key"))
     assert exc_info.value.status_code == 401
@@ -42,5 +41,5 @@ def test_require_api_key_rejects_wrong():
     }
 
 
-def test_require_api_key_accepts_correct():
-    asyncio.run(require_api_key(settings.api_key))
+def test_require_api_key_accepts_correct(api_key):
+    asyncio.run(require_api_key(api_key))

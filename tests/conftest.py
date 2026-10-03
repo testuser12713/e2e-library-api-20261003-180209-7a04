@@ -4,12 +4,22 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app import config
 from app.database import Base, get_db
 from app.main import app
 
 
 @pytest.fixture()
-def client():
+def api_key(monkeypatch):
+    value = "test-api-key"
+    monkeypatch.setenv("LIBRARY_API_KEY", value)
+    config.get_settings.cache_clear()
+    yield value
+    config.get_settings.cache_clear()
+
+
+@pytest.fixture()
+def client(api_key):
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
