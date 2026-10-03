@@ -1,0 +1,30 @@
+[project]
+name = "library-api"
+version = "0.1.0"
+description = "REST API for the lending of a small city library"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.141,<0.142",
+    "uvicorn>=0.54,<0.55",
+    "sqlalchemy>=2.1,<2.2",
+    "pydantic>=2.13,<2.14",
+    "pydantic-settings>=2.15,<2.16",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4,<8.5",
+    "httpx>=0.28,<0.29",
+    "ruff>=0.16,<0.17",
+    "mypy>=2.3,<2.4",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
