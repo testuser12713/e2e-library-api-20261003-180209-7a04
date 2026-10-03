@@ -1,0 +1,23 @@
+{
+  "runcontract": 1,
+  "services": [
+    {
+      "name": "api",
+      "dir": ".",
+      "stack": "python",
+      "kind": "server",
+      "install": [["${python}", "-m", "pip", "install", "-q", "-e", "."]],
+      "start": ["${python}", "-m", "uvicorn", "app.main:app", "--port", "${PORT}"],
+      "port": 8000,
+      "port_env": "PORT",
+      "health": { "path": "/health", "expect_status": [200] },
+      "env": {
+        "LIBRARY_API_KEY": {
+          "dev": "dev-key",
+          "not_secret": true,
+          "why": "Documented development default from SPEC.md, shared by every ticket's tests; not a production credential."
+        }
+      }
+    }
+  ]
+}
