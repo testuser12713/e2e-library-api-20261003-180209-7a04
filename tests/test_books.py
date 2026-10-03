@@ -1,8 +1,5 @@
-from app.config import settings
-
-
-def _auth() -> dict[str, str]:
-    return {"X-API-Key": settings.api_key}
+def _auth(api_key: str) -> dict[str, str]:
+    return {"X-API-Key": api_key}
 
 
 def _book_payload(**overrides) -> dict:
@@ -17,12 +14,12 @@ def _book_payload(**overrides) -> dict:
     return payload
 
 
-def _create(client, **overrides):
-    return client.post("/books", json=_book_payload(**overrides), headers=_auth())
+def _create(client, api_key, **overrides):
+    return client.post("/books", json=_book_payload(**overrides), headers=_auth(api_key))
 
 
-def test_create_and_get_book(client):
-    resp = _create(client)
+def test_create_and_get_book(client, api_key):
+    resp = _create(client, api_key)
     assert resp.status_code == 201
     body = resp.json()
     assert body["id"] == 1
@@ -34,10 +31,11 @@ def test_create_and_get_book(client):
     assert resp.json()["isbn"] == "978-0132350884"
 
 
-def test_list_books(client):
-    _create(client)
+def test_list_books(client, api_key):
+    _create(client, api_key)
     _create(
         client,
+        api_key,
         title="The Pragmatic Programmer",
         author="Andrew Hunt",
         isbn="978-0201616224",
@@ -48,12 +46,12 @@ def test_list_books(client):
     assert titles == ["Clean Code", "The Pragmatic Programmer"]
 
 
-def test_put_book(client):
-    _create(client)
+def test_put_book(client, api_key):
+    _create(client, api_key)
     resp = client.put(
         "/books/1",
         json={"title": "Clean Code (2nd ed.)", "total_copies": 5},
-        headers=_auth(),
+        headers=_auth(api_key),
     )
     assert resp.status_code == 200
     body = resp.json()
@@ -62,12 +60,12 @@ def test_put_book(client):
     assert body["author"] == "Robert C. Martin"
 
 
-def test_patch_book(client):
-    _create(client)
+def test_patch_book(client, api_key):
+    _create(client, api_key)
     resp = client.patch(
         "/books/1",
         json={"author": "Uncle Bob"},
-        headers=_auth(),
+        headers=_auth(api_key),
     )
     assert resp.status_code == 200
     body = resp.json()
@@ -75,26 +73,27 @@ def test_patch_book(client):
     assert body["title"] == "Clean Code"
 
 
-def test_delete_book(client):
-    _create(client)
-    resp = client.delete("/books/1", headers=_auth())
+def test_delete_book(client, api_key):
+    _create(client, api_key)
+    resp = client.delete("/books/1", headers=_auth(api_key))
     assert resp.status_code == 204
 
     resp = client.get("/books/1")
     assert resp.status_code == 404
 
 
-def test_duplicate_isbn_rejected(client):
-    _create(client)
-    resp = _create(client, title="Other Book", author="Someone Else")
+def test_duplicate_isbn_rejected(client, api_key):
+    _create(client, api_key)
+    resp = _create(client, api_key, title="Other Book", author="Someone Else")
     assert resp.status_code == 409
     assert resp.json()["detail"]["code"] == "conflict"
 
 
-def test_update_to_duplicate_isbn_rejected(client):
-    _create(client)
+def test_update_to_duplicate_isbn_rejected(client, api_key):
+    _create(client, api_key)
     _create(
         client,
+        api_key,
         title="The Pragmatic Programmer",
         author="Andrew Hunt",
         isbn="978-0201616224",
@@ -102,16 +101,17 @@ def test_update_to_duplicate_isbn_rejected(client):
     resp = client.put(
         "/books/2",
         json={"isbn": "978-0132350884"},
-        headers=_auth(),
+        headers=_auth(api_key),
     )
     assert resp.status_code == 409
     assert resp.json()["detail"]["code"] == "conflict"
 
 
-def test_search_title_case_insensitive(client):
-    _create(client)
+def test_search_title_case_insensitive(client, api_key):
+    _create(client, api_key)
     _create(
         client,
+        api_key,
         title="The Pragmatic Programmer",
         author="Andrew Hunt",
         isbn="978-0201616224",
@@ -122,10 +122,11 @@ def test_search_title_case_insensitive(client):
     assert titles == ["Clean Code"]
 
 
-def test_search_author_case_insensitive(client):
-    _create(client)
+def test_search_author_case_insensitive(client, api_key):
+    _create(client, api_key)
     _create(
         client,
+        api_key,
         title="The Pragmatic Programmer",
         author="Andrew Hunt",
         isbn="978-0201616224",
@@ -136,10 +137,11 @@ def test_search_author_case_insensitive(client):
     assert titles == ["The Pragmatic Programmer"]
 
 
-def test_pagination_limit_and_offset(client):
+def test_pagination_limit_and_offset(client, api_key):
     for i in range(5):
         _create(
             client,
+            api_key,
             title=f"Book {i}",
             isbn=f"isbn-{i}",
         )
@@ -155,14 +157,14 @@ def test_get_book_not_found(client):
     assert resp.json()["detail"]["code"] == "not_found"
 
 
-def test_update_book_not_found(client):
-    resp = client.put("/books/999", json={"title": "X"}, headers=_auth())
+def test_update_book_not_found(client, api_key):
+    resp = client.put("/books/999", json={"title": "X"}, headers=_auth(api_key))
     assert resp.status_code == 404
     assert resp.json()["detail"]["code"] == "not_found"
 
 
-def test_delete_book_not_found(client):
-    resp = client.delete("/books/999", headers=_auth())
+def test_delete_book_not_found(client, api_key):
+    resp = client.delete("/books/999", headers=_auth(api_key))
     assert resp.status_code == 404
     assert resp.json()["detail"]["code"] == "not_found"
 
@@ -183,7 +185,7 @@ def test_write_with_wrong_api_key_401(client):
     assert resp.json()["detail"]["code"] == "unauthorized"
 
 
-def test_reads_open_without_key(client):
-    _create(client)
+def test_reads_open_without_key(client, api_key):
+    _create(client, api_key)
     assert client.get("/books").status_code == 200
     assert client.get("/books/1").status_code == 200
